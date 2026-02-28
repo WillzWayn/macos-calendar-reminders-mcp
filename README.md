@@ -31,7 +31,7 @@ Built with performance and security in mind using Apple's native `EventKit` fram
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/macbook-reminders-calendar-mcp.git
+   git clone https://github.com/WillzWayn/macbook-reminders-calendar-mcp.git
    cd macbook-reminders-calendar-mcp
    ```
 
