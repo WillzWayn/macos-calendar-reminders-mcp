@@ -49,7 +49,7 @@ Add the following to your `claude_desktop_config.json` (usually found in `~/Libr
 ```json
 {
   "mcpServers": {
-    "macos-calendar": {
+    "macos-calendar-reminders": {
       "command": "uv",
       "args": [
         "--directory",
@@ -61,6 +61,29 @@ Add the following to your `claude_desktop_config.json` (usually found in `~/Libr
         "--stdio"
       ]
     }
+  }
+}
+```
+
+### OpenCode
+
+Add the following to your `opencode.json` (usually found in `~/.config/opencode/opencode.json`):
+
+```json
+{
+    "macos-calendar-reminders": {
+      "type": "local",
+      "command": [
+        "uv",
+        "run",
+        "--directory",
+        "/absolute/path/to/macbook-reminders-calendar-mcp",
+        "python",
+        "-m",
+        "src.server",
+        "--stdio"
+      ],
+      "enabled": true
   }
 }
 ```
