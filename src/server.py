@@ -17,6 +17,7 @@ from src.config import get_settings
 from src.eventkit.store import EventKitStore
 from src.services.calendar_service import CalendarService
 from src.services.reminder_service import ReminderService
+from src.services.summary_service import SummaryService
 
 
 @dataclass
@@ -26,6 +27,7 @@ class AppContext:
     event_store: EventKitStore
     calendar_service: CalendarService
     reminder_service: ReminderService
+    summary_service: SummaryService
 
 
 @asynccontextmanager
@@ -41,11 +43,13 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
 
     calendar_service = CalendarService(store)
     reminder_service = ReminderService(store)
+    summary_service = SummaryService(calendar_service, reminder_service)
 
     yield AppContext(
         event_store=store,
         calendar_service=calendar_service,
         reminder_service=reminder_service,
+        summary_service=summary_service,
     )
 
 
@@ -325,6 +329,71 @@ async def delete_reminder(ctx: Context, reminder_id: str) -> dict:
         if success:
             return {"status": "deleted", "reminder_id": reminder_id}
         return {"error": f"Failed to delete reminder '{reminder_id}'"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ---------------------------------------------------------------------------
+# Summary tools
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def weekly_summary(
+    ctx: Context,
+    days: int = 7,
+    format: str = "ascii",
+    start_date: Optional[str] = None,
+) -> dict:
+    """Get a unified summary of all calendar events and pending reminders.
+
+    Returns events from ALL calendars and pending reminders organized by day.
+    Output formats: 'ascii' (visual table), 'markdown', or 'json'.
+
+    Args:
+        days: Number of days to cover (default 7).
+        format: Output format - 'ascii', 'markdown', or 'json'.
+        start_date: Start date ISO 8601 (defaults to today).
+    """
+    try:
+        app_ctx: AppContext = ctx.request_context.lifespan_context
+        result = app_ctx.summary_service.generate(
+            days=days,
+            fmt=format,
+            start_date=start_date,
+        )
+        if isinstance(result, dict):
+            return result
+        return {"summary": result}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+async def daily_summary(
+    ctx: Context,
+    format: str = "ascii",
+    date: Optional[str] = None,
+) -> dict:
+    """Get today's summary of all calendar events and pending reminders.
+
+    Same as weekly_summary but scoped to a single day.
+    Output formats: 'ascii' (visual table), 'markdown', or 'json'.
+
+    Args:
+        format: Output format - 'ascii', 'markdown', or 'json'.
+        date: Target date ISO 8601 (defaults to today).
+    """
+    try:
+        app_ctx: AppContext = ctx.request_context.lifespan_context
+        result = app_ctx.summary_service.generate(
+            days=1,
+            fmt=format,
+            start_date=date,
+        )
+        if isinstance(result, dict):
+            return result
+        return {"summary": result}
     except Exception as e:
         return {"error": str(e)}
 
